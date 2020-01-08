@@ -38,7 +38,8 @@ In our experiments, we conduct FNA on MobileNetV2 to obtain new networks for bot
     The seed network MobileNetV2 is trained on ImageNet using the code of [DenseNAS](https://github.com/JaminFong/DenseNAS). We provide the pre-trained weights and `net_config` of the seed network in [MobileNetV2](https://drive.google.com/open?id=1XW0NxkLckKQ68s6V7nf7vF4qe1WsL3GE). The code of MobileNetV2 model is constructed in `models/derived_imagenet_net.py`.
 
 2. We provide the adapted parameters and `net_config` in checkpoint [RetinaNet](https://drive.google.com/open?id=1BatmfFQ6ArcYN3l8OD9epl3asRhjx1yx). You can evaluate the checkpoint with the following script.
-`sh scripts/test.sh`
+
+    `sh scripts/test.sh`
 
 ## FNA on Semantic Segmentation
 
