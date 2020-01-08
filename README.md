@@ -12,10 +12,12 @@ In this paper, we propose a Fast Neural Network Adaptation (FNA) method, which c
 
 In our experiments, we conduct FNA on MobileNetV2 to obtain new networks for both segmentation and detection that clearly out-perform existing networks designed both manually and by NAS. The total computation cost of FNA is significantly less than SOTA segmentation/detection NAS approaches: 1737x less than DPC, 6.8x less than Auto-DeepLab and 7.4x less than DetNAS.
 
-![seg_results](./imgs/seg_results.png)
-![seg_cost](./imgs/seg_cost.png)
-![det_results](./imgs/det_results.png)
-![det_cost](./imgs/det_cost.png)
+<div  align="center">
+<img src="./imgs/seg_results.png" width = "800">
+<img src="./imgs/seg_cost.png" width = "600">
+<img src="./imgs/det_results.png" width = "550">
+<img src="./imgs/det_cost.png" width = "800">
+</div>
 
 ## FNA on Object Detection
 
