@@ -1,28 +1,27 @@
 from __future__ import division
 
 import argparse
+import numpy as np
 import os
 import os.path as osp
 import sys
-import time
 sys.path.append(osp.join(sys.path[0], '..'))
-
+import time
 import torch
-from torch.utils import data
+import warnings
+warnings.filterwarnings("ignore", category=UserWarning)
 
 import models
 from mmcv import Config
 from mmdet import __version__
-from mmdet.apis import (get_root_logger, init_dist, set_random_seed)
-from tools.apis.train import train_detector
+from mmdet.apis import init_dist, set_random_seed
 from mmdet.datasets import get_dataset
-from mmdet.models import build_detector, detectors
+from mmdet.models import build_detector
 from tools import utils
-from mmdet.datasets import build_dataloader
-from mmcv.parallel import MMDataParallel, MMDistributedDataParallel
+from tools.apis.fna_search_apis import search_detector
+from tools.divide_dataset import build_divide_dataset
 
-import warnings
-warnings.simplefilter("ignore")
+
 def parse_args():
     parser = argparse.ArgumentParser(description='Train a detector')
     parser.add_argument('config', help='train config file path')
@@ -41,7 +40,7 @@ def parse_args():
         default=1,
         help='number of gpus to use '
         '(only applicable to non-distributed training)')
-    parser.add_argument('--seed', type=int, default=1, help='random seed')
+    parser.add_argument('--seed', type=int, default=None, help='random seed')
     parser.add_argument('--port', type=int, default=23333, help='random seed')
     parser.add_argument(
         '--launcher',
@@ -56,8 +55,8 @@ def parse_args():
 
 def main():
     args = parse_args()
-
     cfg = Config.fromfile(args.config)
+    
     # set cudnn_benchmark
     if cfg.get('cudnn_benchmark', False):
         torch.backends.cudnn.benchmark = True
@@ -82,19 +81,18 @@ def main():
         init_dist(args.launcher, **cfg.dist_params)
 
     # init logger before other steps
-    # logger = get_root_logger(cfg.log_level)
     utils.create_work_dir(cfg.work_dir)
     logger = utils.get_root_logger(cfg.work_dir, cfg.log_level)
     logger.info('Distributed training: {}'.format(distributed))
-    logger.info('Retrain configs: \n'+str(cfg))
-    logger.info('Retrain args: \n'+str(args))
+    logger.info('Search args: \n'+str(args))
+    logger.info('Search configs: \n'+str(cfg))
 
     if cfg.checkpoint_config is not None:
         # save mmdet version in checkpoints as meta data
         cfg.checkpoint_config.meta = dict(
             mmdet_version=__version__, config=cfg.text)
 
-    # set random seeds
+    # set random seeds  
     if args.seed is not None:
         logger.info('Set random seed to {}'.format(args.seed))
         set_random_seed(args.seed)
@@ -103,28 +101,19 @@ def main():
 
     model = build_detector(
         cfg.model, train_cfg=cfg.train_cfg, test_cfg=cfg.test_cfg)
-    if not hasattr(model, 'neck'):
-        model.neck = None
-    
-    logger.info('Backbone net config: \n' + cfg.model.backbone.net_config)
-    utils.get_network_madds(model.backbone, model.neck, model.bbox_head, 
-                            cfg.image_size_madds, logger)
+    model.backbone.get_sub_obj_list(cfg.sub_obj, (1, 3,)+cfg.image_size_madds)
 
     if cfg.use_syncbn:
         model = utils.convert_sync_batchnorm(model)
 
-    train_dataset = get_dataset(cfg.data.train)
-    train_detector(
-        model,
-        train_dataset,
-        cfg,
-        distributed=distributed,
-        validate=args.validate,
-        logger=logger)
+    train_dataset, arch_dataset = build_divide_dataset(cfg.data, part_1_ratio=cfg.train_data_ratio)
 
-    logger.info('Backbone net config: \n' + cfg.model.backbone.net_config)
-    utils.get_network_madds(model.backbone, model.neck, model.bbox_head, 
-                            cfg.image_size_madds, logger)
+    search_detector(model, 
+                    (train_dataset, arch_dataset),
+                    cfg,
+                    distributed=distributed,
+                    validate=args.validate,
+                    logger=logger)
 
 
 if __name__ == '__main__':

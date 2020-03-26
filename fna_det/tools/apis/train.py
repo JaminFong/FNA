@@ -67,9 +67,17 @@ def _dist_train(model, dataset, cfg, validate=False):
             cfg.data.workers_per_gpu,
             dist=True)
     ]
+
     
+
     # put model on gpus
     model = MMDistributedDataParallel(model.cuda())
+    # with torch.no_grad():
+    #     for j in range(2):
+    #         print(j)
+    #         for i, data_batch in enumerate(data_loaders[0]):
+    #             _ = model(**data_batch)
+    #             # break
 
     # build runner
     runner = Runner(model, batch_processor, cfg.optimizer, cfg.work_dir,

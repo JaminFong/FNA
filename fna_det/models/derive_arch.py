@@ -6,8 +6,10 @@ class ArchGenerate_FNA(object):
     def __init__(self, super_network):
         self.primitives_normal = super_network.primitives_normal
         self.primitives_reduce = super_network.primitives_reduce
-        if hasattr(super_network, 'primitives_special'):
-            self.primitives_special = super_network.primitives_special
+        if hasattr(super_network, 'primitives_for_head'):
+            self.primitives_for_head = super_network.primitives_for_head
+        self.num_layers = super_network.num_layers
+        self.chs = super_network.search_params.net_scale.chs
 
     def update_arch_params(self, alphas):
         self.alphas = alphas
@@ -16,29 +18,36 @@ class ArchGenerate_FNA(object):
         flat = lambda t: [x for sub in t for x in flat(sub)] if isinstance(t, Iterable) else [t]
         self.update_arch_params(alphas)
         def _parse(weights):
-            # gene = ['k3_e1_g1']
-            # n = [4, 4, 4, 4, 4, 1]
-            gene = []
-            n = [3,5,7,4]
+            assert len(alphas) == sum(self.num_layers)
 
-            i = 0
-            for _n in n:
-                for idx in range(_n):
-                    W = flat(weights[i])
-                    k_best = None
-                    for k in range(len(W)):
-                        if k_best is None or W[k] > W[k_best]:
-                            k_best = k
-                    i += 1
-                    if idx == 0 and len(W) == 3:
-                        gene.append(self.primitives_special[k_best])
-                    elif idx == 0 and len(W) != 3:
-                        gene.append(self.primitives_reduce[k_best])
+            final_stages = []
+            final_stages.append(['k3_e1'])
+            count = 0
+            for num_layer in self.num_layers:
+                stage = []
+                for _ in range(num_layer):
+                    weight = weights[count]
+                    if len(weight) == len(self.primitives_reduce):
+                        op = self.primitives_reduce[weight.index(max(weight))]
+                    elif len(weight) == len(self.primitives_normal):
+                        op = self.primitives_normal[weight.index(max(weight))]
+                    elif hasattr(self, 'primitives_for_head'):
+                        op = self.primitives_for_head[weight.index(max(weight))]
                     else:
-                        gene.append(self.primitives_normal[k_best])
+                        raise ValueError
+                    stage.append(op)
+                    count += 1
+                final_stages.append(stage)
 
-            return gene
+            final_code = []
+            for i, stage in enumerate(final_stages):
+                if i in [1,2,3,5]:
+                    stride = 2
+                else:
+                    stride = 1
+                final_code.append([[self.chs[i], self.chs[i+1]], stage, stride])
+            return ('|\n'.join(map(str, final_code)))
 
-        gene_normal = _parse(alphas)
-        print(gene_normal)
-        return gene_normal
+        net_config = _parse(alphas)
+        logging.debug(net_config)
+        return net_config

@@ -4,7 +4,9 @@ import torch
 
 # ---- Public functions
 
-def comp_multadds(model, input_size=(3,224,224), half=False):
+def comp_multadds(model, input_size=(3,224,224), magnitude='M', half=False):
+    assert magnitude in ['K', 'M', 'B']
+    mag_dic = {'K': 1e3, 'M': 1e6, 'B': 1e9}
     input_size = (1,) + tuple(input_size)
     model = model.cuda()
     input_data = torch.randn(input_size).cuda()
@@ -15,18 +17,21 @@ def comp_multadds(model, input_size=(3,224,224), half=False):
     with torch.no_grad():
         _ = model(input_data)
 
-    mult_adds = model.compute_average_flops_cost() / 1e6
+    mult_adds = model.compute_average_flops_cost() / mag_dic[magnitude]
     return mult_adds
 
 
-def comp_multadds_fw(model, input_data):
+def comp_multadds_fw(model, input_data, magnitude='M', device='gpu'):
+    assert magnitude in ['K', 'M', 'B']
+    mag_dic = {'K': 1e3, 'M': 1e6, 'B': 1e9}
     model = add_flops_counting_methods(model)
     model.start_flops_count()
-    model = model.cuda()
+    if device == 'gpu':
+        model = model.cuda()
     with torch.no_grad():
         output_data = model(input_data)
 
-    mult_adds = model.compute_average_flops_cost() / 1e6 
+    mult_adds = model.compute_average_flops_cost() / mag_dic[magnitude] 
     return mult_adds, output_data
 
 

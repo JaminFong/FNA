@@ -3,10 +3,10 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 OPS = {
+    'k3_e1': lambda C_in, C_out, stride, dilation, affine, track: MBBlock(C_in, C_out, 3, stride, 1, 1, dilation, affine=affine, track = track),
     'k3_e3': lambda C_in, C_out, stride, dilation, affine, track: MBBlock(C_in, C_out, 3, stride, 3, 1, dilation, affine=affine, track = track),
     'k3_e6': lambda C_in, C_out, stride, dilation, affine, track: MBBlock(C_in, C_out, 3, stride, 6, 1, dilation, affine=affine, track = track),
     'k5_e1': lambda C_in, C_out, stride, dilation, affine, track: MBBlock(C_in, C_out, 5, stride, 1, 1, dilation, affine=affine, track = track),
-    'k3_e1': lambda C_in, C_out, stride, dilation, affine, track: MBBlock(C_in, C_out, 3, stride, 1, 1, dilation, affine=affine, track = track),
     'k5_e3': lambda C_in, C_out, stride, dilation, affine, track: MBBlock(C_in, C_out, 5, stride, 3, 1, dilation, affine=affine, track = track),
     'k5_e6': lambda C_in, C_out, stride, dilation, affine, track: MBBlock(C_in, C_out, 5, stride, 6, 1, dilation, affine=affine, track = track),
     'k7_e1': lambda C_in, C_out, stride, dilation, affine, track: MBBlock(C_in, C_out, 7, stride, 1, 1, dilation, affine=affine, track = track),
@@ -61,7 +61,7 @@ class MBBlock(nn.Module):
         if self.res_flag:
             return self.op(x) + x
         else:
-            return self.op(x)  # + self.trans(x)
+            return self.op(x)
 
 
 def Skip(C_in, C_out, stride, affine):
@@ -129,8 +129,18 @@ def conv_dw(inp, oup, stride=1, padding=1):
 
         nn.Conv2d(inp, oup, kernel_size=1, stride=1, padding=0, bias=False),
         nn.BatchNorm2d(oup, eps=1e-03),
+        nn.ReLU6(inplace=True),
     )
 
+def conv_dw_head(inp, oup, stride=1, padding=1):
+    return nn.Sequential(
+        nn.Conv2d(inp, inp, kernel_size=3, stride=stride, padding=padding, groups=inp, bias=False),
+        nn.BatchNorm2d(inp, eps=1e-03),
+        nn.ReLU6(inplace=True),
+
+        nn.Conv2d(inp, oup, kernel_size=1, stride=1, padding=0, bias=False),
+        nn.BatchNorm2d(oup, eps=1e-03),
+    )
 
 def conv_bn(inp, oup, stride):
     return nn.Sequential(

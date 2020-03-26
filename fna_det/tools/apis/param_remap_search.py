@@ -4,24 +4,30 @@ import logging
 from tools.utils import load_checkpoint
 
 
-def remap_for_paramadapt(load_path, model_dict, seed_num_layers=[]):
+def remap_for_archadapt(load_path, model_dict, seed_num_layers=[]):
     seed_dict = load_checkpoint(load_path, map_location='cpu')
-    logging.info('Remapping for parameter adaptation starts!')
+    logging.info('Remapping for architecture adaptation starts!')
 
     # remapping on the depth level
-    depth_mapped_dict ={}
+    depth_mapped_dict = {}
     for k in model_dict.keys():
-        if 'blocks.' in k and 'layers.' in k:
+        if k in seed_dict:
+            depth_mapped_dict[k] = seed_dict[k]
+        elif 'blocks.1' in k:
+            seed_key = re.sub('blocks.1', 'blocks.1.layers.0', k)
+            if 'tracked' in seed_key and seed_key not in seed_dict:
+                continue
+            depth_mapped_dict[k] = seed_dict[seed_key]
+        elif 'blocks.' in k and 'layers.' in k:
             block_id = int(k.split('.')[1])
             layer_id = int(k.split('.')[3])
             seed_layer_id = seed_num_layers[block_id]-1
             seed_key = re.sub('layers.'+str(layer_id), 
-                        'layers.'+str(min(seed_layer_id, layer_id)), k)
-            if seed_key not in seed_dict and 'tracked' in seed_key:
+                            'layers.'+str(min(seed_layer_id, layer_id)), 
+                            k[:18]) + k[29:]
+            if 'tracked' in seed_key and seed_key not in seed_dict:
                 continue
             depth_mapped_dict[k] = seed_dict[seed_key]
-        elif k in seed_dict:
-            depth_mapped_dict[k] = seed_dict[k]
 
     # remapping on the width and kernel level simultaneously
     mapped_dict = {}
@@ -51,5 +57,5 @@ def remap_for_paramadapt(load_path, model_dict, seed_num_layers=[]):
             else:
                 mapped_dict[k] = v
     model_dict.update(mapped_dict)
-    logging.info('Remapping for parameter adaptation finished!')
+    logging.info('Remapping for architecture adaptation finished!')
     return model_dict

@@ -1,12 +1,11 @@
 import copy
-import random
 import logging
-from collections import defaultdict
-
-from pycocotools.coco import COCO
-
 import mmcv
-from mmdet.datasets import CocoDataset
+import random
+
+from collections import defaultdict
+from mmdet.datasets import CocoDataset, RepeatDataset
+from pycocotools.coco import COCO
 
 
 def build_divide_dataset(cfg, part_1_ratio=0.5, seed=520):
@@ -17,8 +16,13 @@ def build_divide_dataset(cfg, part_1_ratio=0.5, seed=520):
     COCO class.
     """
     logging.info('Prepare datasets.')
-    assert cfg.train.pop('type') == 'CocoDataset', 'Only support COCO.'
-    annotations = mmcv.load(cfg.train.pop('ann_file'))
+    data_type = cfg.train.type
+    if data_type == 'RepeatDataset':
+        train_cfg = cfg.train.dataset
+    else:
+        train_cfg = cfg.train
+    assert train_cfg.pop('type') == 'CocoDataset', 'Only support COCO.'
+    annotations = mmcv.load(train_cfg.pop('ann_file'))
     images = annotations.pop('images')
     part_1_annotations = copy.copy(annotations)
     part_2_annotations = copy.copy(annotations)
@@ -35,9 +39,10 @@ def build_divide_dataset(cfg, part_1_ratio=0.5, seed=520):
 
     part_1_coco = COCOFromDict(part_1_annotations)
     part_2_coco = COCOFromDict(part_2_annotations)
-    # import pdb; pdb.set_trace()
-    part_1_dataset = InitDatasetFromCOCOClass(**cfg.train, ann_file=part_1_coco)
+    part_1_dataset = InitDatasetFromCOCOClass(**train_cfg, ann_file=part_1_coco)
     part_2_dataset = InitDatasetFromCOCOClass(**cfg.val, ann_file=part_2_coco)
+    if data_type == 'RepeatDataset':
+        part_1_dataset = RepeatDataset(part_1_dataset, cfg.train.times)
     logging.info(f'Finished preparing datasets.')
 
     return part_1_dataset, part_2_dataset

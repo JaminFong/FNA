@@ -36,8 +36,8 @@ class FNA_Retinanet(nn.Module):
             elif isinstance(m, nn.BatchNorm2d):
                 m.weight.data.fill_(1)
                 m.bias.data.zero_()
-        if pretrained is not None:
-            if pretrained.use_load:
-                model_dict = remap_for_paramadapt(pretrained.load_path, self.state_dict(), 
-                                                    pretrained.seed_num_layers)
-                self.load_state_dict(model_dict)
+
+        if pretrained is not None and pretrained.use_load:
+            model_dict = remap_for_paramadapt(pretrained.load_path, self.state_dict(), 
+                                                pretrained.seed_num_layers)
+            self.load_state_dict(model_dict)

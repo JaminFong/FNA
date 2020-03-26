@@ -66,6 +66,14 @@ def load_checkpoint(filename,
                 os.system('rm '+filename)
             os.system('wget -N -q -P ../ ' + url)
         dist.barrier()
+    elif filename.startswith(('hdfs://',)):
+        url = filename
+        filename = '../' + url.split('/')[-1]
+        if get_dist_info()[0]==0:
+            if osp.isfile(filename):
+                os.system('rm '+filename)
+            os.system('hdfs dfs -get ' + url + ' ../')
+        dist.barrier()
     else:
         if not osp.isfile(filename):
             raise IOError('{} is not a checkpoint file'.format(filename))
@@ -109,6 +117,23 @@ def load_net_config(path):
                 break
     return net_config
 
+
+def sort_net_config(net_config):
+    def sort_skip(op_list):
+        # put the skip operation to the end of one stage
+        num = op_list.count('skip')
+        for _ in range(num):
+            op_list.remove('skip')
+            op_list.append('skip')
+        return op_list
+
+    sorted_net_config = []
+    for cfg in net_config:
+        cfg[1] = sort_skip(cfg[1])
+        sorted_net_config.append(cfg)
+    return sorted_net_config
+
+
 def get_output_chs(net_config):
     if '|' in net_config:
         net_config = parse_net_config(net_config) 
@@ -122,8 +147,7 @@ def get_output_chs(net_config):
     return stage_chs[-4:]
 
 
-def get_network_madds(backbone, neck, head, input_size, logger):
-
+def get_network_madds(backbone, neck, head, input_size, logger, search=False):
     input_data = torch.randn((2,3,)+input_size).cuda()
     backbone_madds, backbone_data = comp_multadds_fw(backbone, input_data)
     backbone_params = count_parameters_in_MB(backbone)
@@ -134,8 +158,12 @@ def get_network_madds(backbone, neck, head, input_size, logger):
         neck_madds = 0.
         neck_params = 0.
         neck_data = backbone_data
+    if hasattr(head, 'search') and search:
+        head.search = False
     head_madds, _ = comp_multadds_fw(head, neck_data)
     head_params = count_parameters_in_MB(head)
+    if hasattr(head, 'search') and search:
+        head.search = True
     total_madds = backbone_madds + neck_madds + head_madds
     total_params = backbone_params + neck_params + head_params
 
