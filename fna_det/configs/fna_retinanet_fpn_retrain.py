@@ -3,7 +3,7 @@ model = dict(
     type='RetinaNet',
     pretrained=dict(
         use_load=True,
-        load_path='hdfs://hobot-bigdata/user/jiemin.fang/fna_seed/seed_model/seed_mbv2.pt',
+        load_path='./seed_mbv2.pt',
         seed_num_layers=[1, 1, 2, 3, 4, 3, 3, 1, 1] # mbv2
         ),
     backbone=dict(
