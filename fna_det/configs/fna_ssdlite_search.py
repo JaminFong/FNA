@@ -163,7 +163,7 @@ sub_obj=dict(
     if_sub_obj=True,
     type='flops',
     log_base=10.,
-    sub_loss_factor=0.35
+    sub_loss_factor=0.15
 )
 type = 'SSDLite'
 # yapf:enable
