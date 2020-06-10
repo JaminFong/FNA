@@ -12,7 +12,7 @@ class ImageNetModel(nn.Module):
         self.global_pooling = nn.AdaptiveAvgPool2d(1)
         self.classifier = nn.Linear(1280, 1000)
         self.init_model()
-        self.set_bn_param(0.9, 1e-3)
+        self.set_bn_param(0.1, 1e-3)
 
     def forward(self, x, stat=None):
         for block in self.blocks:
