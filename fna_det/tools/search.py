@@ -106,10 +106,10 @@ def main():
     if cfg.use_syncbn:
         model = utils.convert_sync_batchnorm(model)
 
-    train_dataset, arch_dataset = build_divide_dataset(cfg.data, part_1_ratio=cfg.train_data_ratio)
+    arch_dataset, train_dataset = build_divide_dataset(cfg.data, part_1_ratio=cfg.train_data_ratio)
 
     search_detector(model, 
-                    (train_dataset, arch_dataset),
+                    (arch_dataset, train_dataset),
                     cfg,
                     distributed=distributed,
                     validate=args.validate,
