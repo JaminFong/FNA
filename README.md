@@ -1,6 +1,6 @@
 # FNA
 
-The code of the ICLR 2020 paper [Fast Neural Network Adaptation via Parameter Remapping and Architecture Search](https://openreview.net/forum?id=rklTmyBKPH)
+Official implementation of [Fast Neural Network Adaptation via Parameter Remapping and Architecture Search (ICLR 2020)](https://openreview.net/forum?id=rklTmyBKPH) and [FNA++: Fast Network Adaptation via Parameter Remapping and Architecture Search (TPAMI)](https://arxiv.org/abs/2006.12986).
 
 Deep neural networks achieve remarkable performance in many computer vision tasks. Most state-of-the-art (SOTA) semantic segmentation and object detection approaches reuse neural network architectures designed for image classification as the backbone, commonly pre-trained on ImageNet. However, performance gains can be achieved by designing network architectures specifically for detection and segmentation, as shown by recent neural architecture search (NAS) research for detection and segmentation. One major challenge though, is that ImageNet pre-training of the search space representation (a.k.a. super network) or the searched networks incurs huge computational cost. 
 
@@ -9,8 +9,7 @@ In this paper, we propose a Fast Neural Network Adaptation (FNA) method, which c
 ![framework](./imgs/framework.png)
 
 ## Noting
-We have released the extension version [FNA++: Fast Network Adaptation via Parameter Remapping and Architecture Search
-](https://arxiv.org/pdf/2006.12986.pdf) and the related code of it will be released in the future.
+We have released the extension version [FNA++: Fast Network Adaptation via Parameter Remapping and Architecture Search](https://arxiv.org/abs/2006.12986) and the related code of it will be released in the future.
 
 ## Results
 
@@ -78,12 +77,20 @@ We provide the adapted parameters and `net_config` in checkpoint [RetinaNet](htt
     ```
 
 ## Citation
-
-```bash
+If you find this repository/work helpful in your research, welcome to cite it.
+```
+@ARTICLE{fna++,
+  author={Fang, Jiemin and Sun, Yuzhu and Zhang, Qian and Peng, Kangjian and Li, Yuan and Liu, Wenyu and Wang, Xinggang},
+  journal={IEEE Transactions on Pattern Analysis and Machine Intelligence}, 
+  title={FNA++: Fast Network Adaptation via Parameter Remapping and Architecture Search}, 
+  year={2020},
+  doi={10.1109/TPAMI.2020.3044416}}
+```
+```
 @inproceedings{
     fang2020fast,
     title={Fast Neural Network Adaptation via Parameter Remapping and Architecture Search},
-    author={Jiemin Fang* and Yuzhu Sun* and Kangjian Peng* and Qian Zhang and Yuan Li and Wenyu Liu and Xinggang Wang},
+    author={Jiemin Fang and Yuzhu Sun and Kangjian Peng and Qian Zhang and Yuan Li and Wenyu Liu and Xinggang Wang},
     booktitle={International Conference on Learning Representations},
     year={2020},
 }
